@@ -17,6 +17,7 @@ static led_strip_handle_t led_strip;
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
 static esp_adc_cal_characteristics_t adc1_chars;
+static int Frequency = 0;
 
 static void poti_init(void)
 {
@@ -27,8 +28,18 @@ static void poti_init(void)
 
 static int poti_read(void)
 {
-    int voltageInput = adc1_get_raw(ADC1_CHANNEL_2);
-    return voltageInput;
+    int voltageInput = esp_adc_cal_raw_to_voltage(adc1_get_raw(ADC1_CHANNEL_2), &adc1_chars);
+    int step = voltageInput / 90;
+
+    if (step == 0)
+    {
+        Frequency = 0;
+    }
+    else
+    {
+        Frequency = 1000 / step;
+    }
+    return Frequency;
 }
 
 static void blink_led(void)
@@ -75,6 +86,6 @@ void app_main(void)
         blink_led();
         /* Toggle the LED state */
         s_led_state = !s_led_state;
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        vTaskDelay(readout / portTICK_PERIOD_MS);
     }
 }
