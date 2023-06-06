@@ -123,17 +123,33 @@ static void configure_led(void)
 
 void app_main(void)
 {
-
-    /* Configure the peripheral according to the LED type */
     configure_led();
     poti_init();
+    int Flast = 0;
+    int FCountdown = 0;
 
-    while (1) {
-        int readout = poti_read();
-        ESP_LOGI(TAG, "Poti Value is %d", readout);
-        ESP_LOGI(TAG, "Turning the LED %s!", s_led_state == true ? "ON" : "OFF");
-        blink_led(readout);
-        /* Toggle the LED state */
-        vTaskDelay(readout / portTICK_PERIOD_MS);
+    while (1)
+    {
+        int FInput = poti_read();
+
+        if (FInput != Flast)
+        {
+            /*update Frequency*/
+            FCountdown = FInput;
+            Flast = FInput;
+            blink_led(FCountdown);
+        }
+        else if (FCountdown <= 10 && Flast != 0)
+        {
+            /*Countdown expired, trigger blink*/
+            FCountdown = Flast;
+            blink_led(FCountdown);
+        }
+        else
+        {
+            /*reduce Countdown by 10ms*/
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+            FCountdown = FCountdown - 10;
+        }
     }
 }
